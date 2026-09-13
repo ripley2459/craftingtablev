@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "${modid}",
+    "name": "${modname}",
+    "description": "",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "",
+    "url": "https://github.com/ripley2459/craftingtablev",
+    "authorList": [
+      "Ripley2459"
+    ],
+    "credits": "The Minecraft modding community for artistic and technical inspiration/guides.",
+    "dependencies": []
+  }
+]

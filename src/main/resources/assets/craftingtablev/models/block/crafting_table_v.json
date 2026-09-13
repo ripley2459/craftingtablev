@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "particle": "craftingtablev:blocks/crafting_table_v_front",
+    "down": "craftingtablev:blocks/crafting_table_v_down",
+    "up": "craftingtablev:blocks/crafting_table_v_top",
+    "north": "craftingtablev:blocks/crafting_table_v_front",
+    "east": "craftingtablev:blocks/crafting_table_v_side",
+    "south": "craftingtablev:blocks/crafting_table_v_side",
+    "west": "craftingtablev:blocks/crafting_table_v_front"
+  }
+}

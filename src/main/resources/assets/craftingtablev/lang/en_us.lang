@@ -1,0 +1,11 @@
+#PARSE_ESCAPES
+
+# ##################################################
+# Blocks
+
+tile.craftingtablev.crafting_table_v.name=Crafting Table V
+
+# ##################################################
+# Tooltips
+
+tooltip.craftingtablev.click_to_craft=Click to craft
