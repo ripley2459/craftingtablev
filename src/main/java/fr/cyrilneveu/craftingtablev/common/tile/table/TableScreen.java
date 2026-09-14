@@ -251,7 +251,12 @@ public class TableScreen extends GuiContainer {
             return;
 
         List<String> tooltip = getItemToolTip(hovered.key().toStack(Math.max(1, hovered.count())));
-        tooltip.add(TextFormatting.YELLOW + Utils.localise("tooltip." + MODID + ".click_to_craft"));
+        if (hovered.failingItem() != null) {
+            String itemName = hovered.failingItem().toStack(1).getDisplayName();
+            tooltip.add(TextFormatting.RED + Utils.localise("tooltip." + MODID + ".will_fail", itemName));
+        } else {
+            tooltip.add(TextFormatting.YELLOW + Utils.localise("tooltip." + MODID + ".click_to_craft"));
+        }
         drawHoveringText(tooltip, mouseX, mouseY);
     }
 

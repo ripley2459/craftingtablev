@@ -30,19 +30,12 @@ public final class CraftResolver {
         if (!tryRecipes(target, realStock, credit, new HashSet<>(), 0, new ArrayList<>()))
             return null;
 
-        Map<ItemKey, Integer> removals = new HashMap<>();
-        for (Map.Entry<ItemKey, Integer> entry : snapshot.entrySet()) {
-            int used = entry.getValue() - realStock.getOrDefault(entry.getKey(), 0);
-            if (used > 0)
-                removals.put(entry.getKey(), used);
-        }
-
         Map<ItemKey, Integer> surplus = new HashMap<>();
         for (Map.Entry<ItemKey, Integer> entry : credit.entrySet())
             if (entry.getValue() > 0)
                 surplus.put(entry.getKey(), entry.getValue());
 
-        return new CraftResult(removals, surplus);
+        return new CraftResult(surplus);
     }
 
     private static boolean resolve(ItemKey key, Map<ItemKey, Integer> realStock, Map<ItemKey, Integer> credit, Set<ItemKey> ancestors, int depth, List<Undo> undo) {

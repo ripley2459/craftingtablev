@@ -40,8 +40,17 @@ public class STablePacket extends AMessage.ServerToClientMessage<STablePacket> {
             Item item = Item.REGISTRY.getObject(new ResourceLocation(buffer.readString(256)));
             int meta = buffer.readVarInt();
             int amount = buffer.readVarInt();
+
+            ItemKey failingItem = null;
+            if (buffer.readBoolean()) {
+                Item failingItemType = Item.REGISTRY.getObject(new ResourceLocation(buffer.readString(256)));
+                int failingMeta = buffer.readVarInt();
+                if (failingItemType != null)
+                    failingItem = new ItemKey(failingItemType, failingMeta);
+            }
+
             if (item != null)
-                list.add(new Craftable(new ItemKey(item, meta), amount));
+                list.add(new Craftable(new ItemKey(item, meta), amount, failingItem));
         }
         craftables = list;
     }
@@ -54,6 +63,13 @@ public class STablePacket extends AMessage.ServerToClientMessage<STablePacket> {
             buffer.writeString(craftable.key().getItem().getRegistryName().toString());
             buffer.writeVarInt(craftable.key().getMeta());
             buffer.writeVarInt(craftable.count());
+
+            ItemKey failingItem = craftable.failingItem();
+            buffer.writeBoolean(failingItem != null);
+            if (failingItem != null) {
+                buffer.writeString(failingItem.getItem().getRegistryName().toString());
+                buffer.writeVarInt(failingItem.getMeta());
+            }
         }
     }
 }

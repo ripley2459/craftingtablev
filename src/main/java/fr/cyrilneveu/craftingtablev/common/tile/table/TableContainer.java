@@ -62,12 +62,9 @@ public class TableContainer extends Container {
         if (player.world.isRemote || !(player instanceof EntityPlayerMP mp) || craftables.stream().noneMatch(craftable -> craftable.key().equals(target)))
             return;
 
-        Map<ItemKey, Integer> snapshot = CraftResolver.snapshot(player.inventory);
-        CraftResult result = CraftResolver.craft(target, snapshot);
-        if (result == null)
+        if (!CraftExecutor.execute(target, mp))
             return;
 
-        result.applyTo(mp);
         refreshCraftables();
     }
 
@@ -91,7 +88,7 @@ public class TableContainer extends Container {
         for (ItemKey candidate : RecipeIndex.allOutputs()) {
             CraftResult result = CraftResolver.craft(candidate, snapshot);
             if (result != null)
-                updated.add(new Craftable(candidate, result.amountOf(candidate)));
+                updated.add(new Craftable(candidate, result.amountOf(candidate), CraftExecutor.predictFailure(candidate, player)));
         }
         updated.sort(Comparator.comparing(Craftable::key, ItemKey.COMPARATOR));
 
