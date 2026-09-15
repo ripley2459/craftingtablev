@@ -53,7 +53,11 @@ public final class CraftExecutor {
         if (depth >= MAX_DEPTH || ancestors.contains(key))
             return false;
 
-        return tryRecipes(key, state, ancestors, depth, undo, steps);
+        if (!tryRecipes(key, state, ancestors, depth, undo, steps))
+            return false;
+
+        ItemStack fromNewCredit = state.pollCredit(key, undo);
+        return fromNewCredit != null && processContainer(fromNewCredit, state, undo);
     }
 
     private static boolean processContainer(ItemStack consumed, State state, List<Runnable> undo) {

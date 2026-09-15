@@ -107,7 +107,12 @@ public final class CraftResolver {
         if (depth >= MAX_DEPTH || ancestors.contains(key))
             return false;
 
-        return tryRecipes(key, realStock, credit, ancestors, depth, undo, touchesContainer, steps);
+        if (!tryRecipes(key, realStock, credit, ancestors, depth, undo, touchesContainer, steps))
+            return false;
+
+        set(credit, key, credit.getOrDefault(key, 0) - 1, undo);
+        creditContainerItem(key, credit, undo, touchesContainer);
+        return true;
     }
 
     private static void creditContainerItem(ItemKey key, Map<ItemKey, Integer> credit, List<Undo> undo, boolean[] touchesContainer) {
