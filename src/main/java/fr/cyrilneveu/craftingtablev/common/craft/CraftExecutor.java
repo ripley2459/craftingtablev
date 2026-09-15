@@ -12,6 +12,7 @@ import java.util.*;
 
 public final class CraftExecutor {
     private static final int MAX_DEPTH = 16;
+    private static final int MAX_STEPS = 5_000;
 
     private CraftExecutor() {
         // Nothing
@@ -33,11 +34,14 @@ public final class CraftExecutor {
 
     private static Resolution resolveTree(ItemKey target, EntityPlayer player) {
         State state = new State(player.inventory);
-        boolean success = tryRecipes(target, state, new HashSet<>(), 0, new ArrayList<>());
+        boolean success = tryRecipes(target, state, new HashSet<>(), 0, new ArrayList<>(), new int[1]);
         return new Resolution(success, state);
     }
 
-    private static boolean resolve(ItemKey key, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo) {
+    private static boolean resolve(ItemKey key, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo, int[] steps) {
+        if (++steps[0] > MAX_STEPS)
+            return false;
+
         ItemStack fromCredit = state.pollCredit(key, undo);
         if (fromCredit != null)
             return processContainer(fromCredit, state, undo);
@@ -49,7 +53,7 @@ public final class CraftExecutor {
         if (depth >= MAX_DEPTH || ancestors.contains(key))
             return false;
 
-        return tryRecipes(key, state, ancestors, depth, undo);
+        return tryRecipes(key, state, ancestors, depth, undo, steps);
     }
 
     private static boolean processContainer(ItemStack consumed, State state, List<Runnable> undo) {
@@ -66,7 +70,7 @@ public final class CraftExecutor {
         return true;
     }
 
-    private static boolean tryRecipes(ItemKey key, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo) {
+    private static boolean tryRecipes(ItemKey key, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo, int[] steps) {
         List<IRecipe> recipes = RecipeIndex.recipesFor(key);
         if (recipes.isEmpty())
             return false;
@@ -81,7 +85,7 @@ public final class CraftExecutor {
                     if (ingredient.getMatchingStacks().length == 0)
                         continue;
 
-                    if (!resolveAny(ingredient, state, ancestors, depth + 1, undo)) {
+                    if (!resolveAny(ingredient, state, ancestors, depth + 1, undo, steps)) {
                         ok = false;
                         break;
                     }
@@ -93,6 +97,9 @@ public final class CraftExecutor {
                 }
 
                 rollback(undo, checkpoint);
+
+                if (steps[0] > MAX_STEPS)
+                    return false;
             }
             return false;
         } finally {
@@ -100,13 +107,16 @@ public final class CraftExecutor {
         }
     }
 
-    private static boolean resolveAny(Ingredient ingredient, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo) {
+    private static boolean resolveAny(Ingredient ingredient, State state, Set<ItemKey> ancestors, int depth, List<Runnable> undo, int[] steps) {
         for (ItemStack alternative : ingredient.getMatchingStacks()) {
             int checkpoint = undo.size();
-            if (resolve(ItemKey.of(alternative), state, ancestors, depth, undo))
+            if (resolve(ItemKey.of(alternative), state, ancestors, depth, undo, steps))
                 return true;
 
             rollback(undo, checkpoint);
+
+            if (steps[0] > MAX_STEPS)
+                return false;
         }
         return false;
     }

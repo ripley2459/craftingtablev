@@ -94,11 +94,18 @@ public class TableContainer extends Container {
 
     private void refreshCraftables() {
         Map<ItemKey, Integer> snapshot = CraftResolver.snapshot(player.inventory);
+        Set<ItemKey> reachable = CraftResolver.reachable(snapshot);
         List<Craftable> updated = new ArrayList<>();
         for (ItemKey candidate : RecipeIndex.allOutputs()) {
+            if (!reachable.contains(candidate))
+                continue;
+
             CraftResult result = CraftResolver.craft(candidate, snapshot);
-            if (result != null)
-                updated.add(new Craftable(candidate, result.amountOf(candidate), CraftExecutor.predictFailure(candidate, player)));
+            if (result == null)
+                continue;
+
+            ItemKey failingItem = result.touchesContainer() ? CraftExecutor.predictFailure(candidate, player) : null;
+            updated.add(new Craftable(candidate, result.amountOf(candidate), failingItem));
         }
         updated.sort(Comparator.comparing(Craftable::key, ItemKey.COMPARATOR));
 
