@@ -2,10 +2,10 @@
   {
     "modid": "${modid}",
     "name": "${modname}",
-    "description": "",
+    "description": "An automatic crafting table that scans your inventory, suggests results, and crafts recursively.",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "logoFile": "",
+    "logoFile": "logo.png",
     "url": "https://github.com/ripley2459/craftingtablev",
     "authorList": [
       "Ripley2459"
