@@ -5,7 +5,7 @@
     "description": "",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "logoFile": "",
+    "logoFile": "logo.png",
     "url": "https://github.com/ripley2459/craftingtablev",
     "authorList": [
       "Ripley2459"

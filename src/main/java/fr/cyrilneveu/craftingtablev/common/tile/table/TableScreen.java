@@ -4,21 +4,27 @@ import fr.cyrilneveu.craftingtablev.common.Utils;
 import fr.cyrilneveu.craftingtablev.common.craft.Craftable;
 import fr.cyrilneveu.craftingtablev.common.net.NetManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static fr.cyrilneveu.craftingtablev.CraftingTableVTags.MODID;
 
@@ -42,12 +48,37 @@ public class TableScreen extends GuiContainer {
     private final TableTile owner;
     private int scrollRows = 0;
     private boolean draggingScrollbar = false;
+    private GuiTextField searchField;
 
     public TableScreen(TableTile owner, Container container) {
         super(container);
         this.owner = owner;
         this.xSize = 176;
         this.ySize = 241;
+    }
+
+    @Override
+    public void initGui() {
+        super.initGui();
+        Keyboard.enableRepeatEvents(true);
+        searchField = new GuiTextField(0, fontRenderer, getGuiLeft() + 9, getGuiTop() + 20, 86, 8);
+        searchField.setEnableBackgroundDrawing(false);
+        searchField.setMaxStringLength(50);
+        searchField.setTextColor(0xFFFFFF);
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (searchField.textboxKeyTyped(typedChar, keyCode))
+            scrollRows = 0;
+        else
+            super.keyTyped(typedChar, keyCode);
     }
 
     private static void renderText(String text, int posX, int posY, int color, float scale, boolean dropShadow, boolean center) {
@@ -85,11 +116,15 @@ public class TableScreen extends GuiContainer {
         super.drawScreen(mouseX, mouseY, partialTicks);
         renderHoveredToolTip(mouseX, mouseY);
         drawMainGridTooltip(mouseX, mouseY);
+        GlStateManager.disableLighting();
+        GlStateManager.disableBlend();
+        searchField.drawTextBox();
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
+        searchField.mouseClicked(mouseX, mouseY, mouseButton);
 
         if (mouseButton != 0)
             return;
@@ -101,8 +136,10 @@ public class TableScreen extends GuiContainer {
         }
 
         Craftable target = gridEntryAt(mouseX - getGuiLeft(), mouseY - getGuiTop());
-        if (target != null)
+        if (target != null) {
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             NetManager.sendToServer(new CTablePacket(target.key()));
+        }
     }
 
     @Override
@@ -149,8 +186,22 @@ public class TableScreen extends GuiContainer {
         scrollRows = Math.round(relative / (float) usableTrack * maxScroll);
     }
 
-    private int maxScrollRows() {
+    private List<Craftable> visibleCraftables() {
         List<Craftable> craftables = ((TableContainer) inventorySlots).getCraftables();
+        String query = searchField == null ? "" : searchField.getText().trim().toLowerCase(Locale.ROOT);
+        if (query.isEmpty())
+            return craftables;
+
+        List<Craftable> filtered = new ArrayList<>();
+        for (Craftable craftable : craftables) {
+            if (craftable.key().toStack(1).getDisplayName().toLowerCase(Locale.ROOT).contains(query))
+                filtered.add(craftable);
+        }
+        return filtered;
+    }
+
+    private int maxScrollRows() {
+        List<Craftable> craftables = visibleCraftables();
         int totalRows = (craftables.size() + GRID_COLUMNS - 1) / GRID_COLUMNS;
         return Math.max(0, totalRows - GRID_ROWS);
     }
@@ -166,7 +217,7 @@ public class TableScreen extends GuiContainer {
         if (column >= GRID_COLUMNS || row >= GRID_ROWS)
             return null;
 
-        List<Craftable> craftables = ((TableContainer) inventorySlots).getCraftables();
+        List<Craftable> craftables = visibleCraftables();
         int index = (row + scrollRows) * GRID_COLUMNS + column;
         return index < craftables.size() ? craftables.get(index) : null;
     }
@@ -216,7 +267,7 @@ public class TableScreen extends GuiContainer {
     }
 
     private void drawMainGridItems(int mouseX, int mouseY) {
-        List<Craftable> craftables = ((TableContainer) inventorySlots).getCraftables();
+        List<Craftable> craftables = visibleCraftables();
         scrollRows = Math.min(scrollRows, maxScrollRows());
 
         int posX = getGuiLeft() + GRID_X;

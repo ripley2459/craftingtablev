@@ -4,9 +4,13 @@ import fr.cyrilneveu.craftingtablev.common.craft.*;
 import fr.cyrilneveu.craftingtablev.common.net.NetManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.server.SPacketSoundEffect;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 
 import java.util.*;
 
@@ -59,13 +63,19 @@ public class TableContainer extends Container {
     }
 
     public void tryCraft(ItemKey target) {
-        if (player.world.isRemote || !(player instanceof EntityPlayerMP mp) || craftables.stream().noneMatch(craftable -> craftable.key().equals(target)))
+        if (player.world.isRemote || !(player instanceof EntityPlayerMP mp))
             return;
 
-        if (!CraftExecutor.execute(target, mp))
-            return;
+        boolean success = craftables.stream().anyMatch(craftable -> craftable.key().equals(target)) && CraftExecutor.execute(target, mp);
+        playCraftSound(mp, success);
 
-        refreshCraftables();
+        if (success)
+            refreshCraftables();
+    }
+
+    private void playCraftSound(EntityPlayerMP mp, boolean success) {
+        SoundEvent sound = success ? SoundEvents.ENTITY_ITEM_PICKUP : SoundEvents.ENTITY_VILLAGER_NO;
+        mp.connection.sendPacket(new SPacketSoundEffect(sound, SoundCategory.PLAYERS, mp.posX, mp.posY, mp.posZ, 0.5F, 1.0F));
     }
 
     private boolean inventoryChanged() {
