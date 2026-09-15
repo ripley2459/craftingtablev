@@ -3,6 +3,7 @@
 An automatic crafting table that scans your inventory, suggests results, and crafts recursively.
 
 ![Demo1](assets/gif1.gif)
+![Demo2](assets/gif2.gif)
 
 ## Credits
 
